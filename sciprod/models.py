@@ -1,6 +1,8 @@
 #coding: utf-8
 
 from django.db import models
+from django.contrib.auth import get_user_model
+import ast
 
 
 class WorkType(models.Model):
@@ -24,12 +26,19 @@ class Journal(models.Model):
     def __unicode__(self):
         return self.name
 
-class ComputationRules(models.Model):
+class ComputationRule(models.Model):
     rule = models.CharField(default='', max_length=500)
     # WT = work type,
     # NP = the number of pages,
     # JIF = Journal Impact Factor
 
+    def evaluate_rule(self, **kwargs):
+        locals().update(kwargs)
+        try:
+            res = ast.literal_eval(self.rule.split(':')[1])
+        except:  # Everything could happened here!
+            res = 0.0
+        return res
 
 class ScientificWork(models.Model):
     name = models.CharField(max_length=300, default='',
@@ -42,7 +51,7 @@ class ScientificWork(models.Model):
                                 verbose_name="название журнала",
                                 help_text="выберите или добавьте недостающий журнал")
     year = models.PositiveIntegerField(default=2017, blank=True,
-                                       vaerbose_name="год издания",
+                                       verbose_name="год издания",
                                        help_text="год опубликования работы")
     pages = models.CharField(max_length=15, blank=True, default='',
                              verbose_name="страницы",
@@ -52,6 +61,21 @@ class ScientificWork(models.Model):
                                   help_text="если файлов несколько, загрузите архив")
     link = models.URLField(blank=True, verbose_name="ссылка",
                            help_text="ссылка на Интернет ресурс")
+
+    published = models.BooleanField(default=False, verbose_name="опубликовано", help_text='отметьте, если хотите опубликовать запись')
+
     user = models.ForeignKey(get_user_model(), null=True, blank=True,
                              editable=False)
+
+    score = models.FloatField(default=0, blank=True)
+
+    def get_score(self):
+        if not self.type:
+            return self.score
+        rules = ComputationRules.objects.filter(rule__contains=type.abbr)
+        res_score = 0.0
+        for rule in rules:
+            res_score += 0.0 # NONE!!
+
+
 
